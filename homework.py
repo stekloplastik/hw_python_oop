@@ -10,15 +10,17 @@ class Calculator:
 
     def get_today_stats(self):
         date_today = dt.datetime.now().date()
-        return sum([i.amount for i in self.records if i.date == date_today])
+        return sum(i.amount for i in self.records if i.date == date_today)
         
     def get_week_stats(self):
         today = dt.datetime.now().date()
         delta = dt.timedelta(days=7)
         date_week_ago = today - delta
-        return sum([
+        return sum(
             rec.amount for rec in self.records
-            if (today >= rec.date >= date_week_ago)])
+            if (today >= rec.date >= date_week_ago))
+    def get_today_remained(self):
+        return self.limit - self.get_today_stats()        
 
 
 class Record:
@@ -44,19 +46,16 @@ class CashCalculator(Calculator):
              'rub': (1.00, 'руб')
             } 
         if currency in RATES:
-            rate = RATES[currency][0]
-            name = RATES[currency][1]
+            rate, name = RATES[currency]
         else:
-            return f'Не знаю такую валюту'
-        if self.limit > self.get_today_stats():
-            cash_remained = round(self.limit/rate 
-            - self.get_today_stats()/rate, 2)
+            raise ValueError('Калькулятор не поддерживает данную валюту')
+        if self.get_today_remained() > 0:
+            cash_remained = round(self.get_today_remained()/rate, 2)
             return f'На сегодня осталось {cash_remained} {name}'
-        elif self.limit/rate == self.get_today_stats()/rate:
+        elif self.get_today_remained() == 0:
             return 'Денег нет, держись'
         else:
-            cash_remained = round(self.get_today_stats()/rate
-                                  - self.limit/rate, 2)
+            cash_remained = abs(round(self.get_today_remained()/rate, 2))
             return f'Денег нет, держись: твой долг - {cash_remained} {name}'                          
 
 
@@ -64,8 +63,8 @@ class CaloriesCalculator(Calculator):
     def get_calories_remained(self):
         calories_limit = self.get_today_stats()
         if calories_limit > 0 and calories_limit < self.limit:
-            return (f'Сегодня можно съесть что-нибудь ещё, но с общей '
-                   f'калорийностью не более ' 
+            return ('Сегодня можно съесть что-нибудь ещё, но с общей '
+                   'калорийностью не более ' 
                    f'{self.limit - calories_limit} кКал')
         else:
-            return f'Хватит есть!'          
+            return 'Хватит есть!'  
